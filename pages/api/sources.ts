@@ -19,7 +19,7 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
     };
     
     const { sourceLinks, relatedQuestions } = await sourcesService.getRelatedQuestions({ query });
-    console.log('getting sources: ', { sourceLinks, relatedQuestions })
+    // console.log('getting sources: ', { sourceLinks, relatedQuestions })
     const sources: Source[] = [];
     for await (const link of sourceLinks) {
       try {
@@ -33,6 +33,7 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
           continue
         }
         const { title, siteName } = parsed;
+        console.log({ title, siteName });
         const metaTags = doc.querySelectorAll('meta') || [];
         const metaImg = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
 
