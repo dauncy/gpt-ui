@@ -43,8 +43,10 @@ export const Search: FC<SearchProps> = ({ onSearch, onAnswerUpdate, onDone }) =>
       throw new Error(response.statusText);
     }
 
-    const { sources, relatedQuestions }: { sources: Source[], relatedQuestions: string[] } = await response.json();
+    console.log("res => ", response);
 
+    const { sources, relatedQuestions }: { sources: Source[], relatedQuestions: string[] } = await response.json();
+    
     return { sources, relatedQuestions };
   };
 

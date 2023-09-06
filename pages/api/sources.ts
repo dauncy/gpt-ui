@@ -19,6 +19,7 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
     };
     
     const { sourceLinks, relatedQuestions } = await sourcesService.getRelatedQuestions({ query });
+    console.log('getting sources: ', { sourceLinks, relatedQuestions })
     const sources: Source[] = [];
     for await (const link of sourceLinks) {
       try {
