@@ -3,11 +3,14 @@ export enum OpenAIModel {
 }
 
 export type Source = {
+  title: string;
+  image: string;
   url: string;
-  text: string;
+  domainName: string;
 };
 
 export type SearchQuery = {
   query: string;
-  sourceLinks: string[];
+  sourceLinks: Source[];
+  relatedQuestions: string[];
 };

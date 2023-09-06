@@ -2,6 +2,7 @@ import { SearchQuery, Source } from "@/types";
 import { IconArrowRight, IconBolt, IconSearch } from "@tabler/icons-react";
 import endent from "endent";
 import { FC, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { Loading } from "./Loading";
 
 interface SearchProps {
   onSearch: (searchResult: SearchQuery) => void;
@@ -24,8 +25,8 @@ export const Search: FC<SearchProps> = ({ onSearch, onAnswerUpdate, onDone }) =>
     }
 
     setLoading(true);
-    const sources = await fetchSources();
-    await handleStream(sources);
+    const { sources, relatedQuestions } = await fetchSources();
+    await handleStream(sources, relatedQuestions);
   };
 
   const fetchSources = async () => {
@@ -42,16 +43,16 @@ export const Search: FC<SearchProps> = ({ onSearch, onAnswerUpdate, onDone }) =>
       throw new Error(response.statusText);
     }
 
-    const { sources }: { sources: Source[] } = await response.json();
+    const { sources, relatedQuestions }: { sources: Source[], relatedQuestions: string[] } = await response.json();
 
-    return sources;
+    return { sources, relatedQuestions };
   };
 
-  const handleStream = async (sources: Source[]) => {
+  const handleStream = async (sources: Source[], relatedQuestions: string[]) => {
     try {
       const prompt = endent`Provide a 2-3 sentence answer to the query based on the following sources. Be original, concise, accurate, and helpful. Cite sources as [1] or [2] or [3] after each sentence (not just the very end) to back up your answer (Ex: Correct: [1], Correct: [2][3], Incorrect: [1, 2]).
       
-      ${sources.map((source, idx) => `Source [${idx + 1}]:\n${source.text}`).join("\n\n")}
+      ${sources.map((source, idx) => `Source [${idx + 1}]:\n${source.url}`).join("\n\n")}
       `;
 
       const response = await fetch("/api/answer", {
@@ -68,7 +69,7 @@ export const Search: FC<SearchProps> = ({ onSearch, onAnswerUpdate, onDone }) =>
       }
 
       setLoading(false);
-      onSearch({ query, sourceLinks: sources.map((source) => source.url) });
+      onSearch({ query, sourceLinks: sources, relatedQuestions });
 
       const data = response.body;
 
@@ -132,10 +133,7 @@ export const Search: FC<SearchProps> = ({ onSearch, onAnswerUpdate, onDone }) =>
   return (
     <>
       {loading ? (
-        <div className="flex items-center justify-center pt-64 sm:pt-72 flex-col">
-          <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <div className="mt-8 text-2xl">Getting answer...</div>
-        </div>
+        <Loading />
       ) : (
         <div className="mx-auto flex h-full w-full max-w-[750px] flex-col items-center space-y-6 px-3 pt-32 sm:pt-64">
           <div className="flex items-center">

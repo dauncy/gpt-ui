@@ -3,10 +3,12 @@ import { Readability } from "@mozilla/readability";
 import * as cheerio from "cheerio";
 import { JSDOM } from "jsdom";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { cleanSourceText } from "../../utils/sources";
+import { cleanSourceText, domainNameFromLink } from "../../utils/sources";
+import { sourcesService } from '../../services/sources.service';
 
 type Data = {
   sources: Source[];
+  relatedQuestions: string[]
 };
 
 const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
@@ -15,67 +17,42 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
       query: string;
       model: OpenAIModel;
     };
-
-    const sourceCount = 4;
-
-    // GET LINKS
-    const response = await fetch(`https://www.google.com/search?q=${query}`);
-    const html = await response.text();
-    const $ = cheerio.load(html);
-    const linkTags = $("a");
-
-    let links: string[] = [];
-
-    linkTags.each((i, link) => {
-      const href = $(link).attr("href");
-
-      if (href && href.startsWith("/url?q=")) {
-        const cleanedHref = href.replace("/url?q=", "").split("&")[0];
-
-        if (!links.includes(cleanedHref)) {
-          links.push(cleanedHref);
-        }
-      }
-    });
-
-    const filteredLinks = links.filter((link, idx) => {
-      const domain = new URL(link).hostname;
-
-      const excludeList = ["google", "facebook", "twitter", "instagram", "youtube", "tiktok"];
-      if (excludeList.some((site) => domain.includes(site))) return false;
-
-      return links.findIndex((link) => new URL(link).hostname === domain) === idx;
-    });
-
-    const finalLinks = filteredLinks.slice(0, sourceCount);
-
-    // SCRAPE TEXT FROM LINKS
-    const sources = (await Promise.all(
-      finalLinks.map(async (link) => {
-        const response = await fetch(link);
-        const html = await response.text();
+    
+    const { sourceLinks, relatedQuestions } = await sourcesService.getRelatedQuestions({ query });
+    const sources: Source[] = [];
+    for await (const link of sourceLinks) {
+      try {
+        const url = link.link
+        const res = await fetch(url);
+        const html = await res.text();
         const dom = new JSDOM(html);
         const doc = dom.window.document;
         const parsed = new Readability(doc).parse();
-
-        if (parsed) {
-          let sourceText = cleanSourceText(parsed.textContent);
-
-          return { url: link, text: sourceText };
+        if (!parsed) {
+          continue
         }
-      })
-    )) as Source[];
+        const { title, siteName } = parsed;
+        const metaTags = doc.querySelectorAll('meta') || [];
+        const metaImg = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
 
-    const filteredSources = sources.filter((source) => source !== undefined);
-
-    for (const source of filteredSources) {
-      source.text = source.text.slice(0, 1500);
+        let domainName = siteName ?? domainNameFromLink(link.link)
+        
+        sources.push({
+          title,
+          image: metaImg,
+          url: link.link,
+          domainName,
+        });
+      } catch (e) {
+        console.error('error parsing dom...', { e })
+        continue
+      }
     }
 
-    res.status(200).json({ sources: filteredSources });
+    res.status(200).json({ sources: sources, relatedQuestions: relatedQuestions });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ sources: [] });
+    res.status(500).json({ sources: [], relatedQuestions: [] });
   }
 };
 
