@@ -32,11 +32,11 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
           continue
         }
         const { title, siteName } = parsed;
-        console.log({ title, siteName });
-        const metaTags = doc.querySelectorAll('meta') || [];
-        const metaImg = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
+        // console.log({ title, siteName });
+        // const metaTags = doc.querySelectorAll('meta') || [];
+        const metaImg = ''; // 'Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
 
-        let domainName = siteName ?? ''// domainNameFromLink(link.link)
+        let domainName = siteName || '';// domainNameFromLink(link.link)
         
         sources.push({
           title,
