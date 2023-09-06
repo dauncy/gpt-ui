@@ -26,15 +26,11 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
         const html = await res.text();
         const dom = new JSDOM(html);
         const doc = dom.window.document;
-        const parsed = new Readability(doc).parse();
-        if (!parsed) {
-          continue
-        }
-        const { title, siteName } = parsed;
         const metaTags = doc.querySelectorAll('meta') || [];
         const metaImg = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
+        const title = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('title'))?.content ?? '';
 
-        const domainName = siteName || domainNameFromLink(link.link);
+        const domainName = domainNameFromLink(link.link);
 
         sources.push({
           title,
@@ -47,7 +43,6 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
         continue
       }
     }
-    console.log('RETURNING STATUS 200 --- ', { sources, relatedQuestions });
     res.status(200).json({ sources: sources, relatedQuestions: relatedQuestions });
   } catch (err) {
     console.log(err);
