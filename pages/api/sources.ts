@@ -36,7 +36,7 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
         const metaTags = doc.querySelectorAll('meta') || [];
         const metaImg = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
 
-        let domainName = siteName ?? domainNameFromLink(link.link)
+        let domainName = siteName ?? ''// domainNameFromLink(link.link)
         
         sources.push({
           title,
