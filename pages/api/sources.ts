@@ -19,7 +19,6 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
     };
     
     const { sourceLinks, relatedQuestions } = await sourcesService.getRelatedQuestions({ query });
-    // console.log('getting sources: ', { sourceLinks, relatedQuestions })
     const sources: Source[] = [];
     for await (const link of sourceLinks) {
       try {
@@ -50,7 +49,7 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
         continue
       }
     }
-
+    console.log('RETURNING STATUS 200 --- ', { sources, relatedQuestions });
     res.status(200).json({ sources: sources, relatedQuestions: relatedQuestions });
   } catch (err) {
     console.log(err);
