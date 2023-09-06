@@ -1,9 +1,8 @@
 import { OpenAIModel, Source } from "@/types";
 import { Readability } from "@mozilla/readability";
-import * as cheerio from "cheerio";
 import { JSDOM } from "jsdom";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { cleanSourceText, domainNameFromLink } from "../../utils/sources";
+import { domainNameFromLink } from "../../utils/sources";
 import { sourcesService } from '../../services/sources.service';
 
 type Data = {
@@ -20,7 +19,7 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
     
     const { sourceLinks, relatedQuestions } = await sourcesService.getRelatedQuestions({ query });
     const sources: Source[] = [];
-    for await (const link of sourceLinks) {
+    for await (const link of sourceLinks.slice(0,4)) {
       try {
         const url = link.link
         const res = await fetch(url);
@@ -32,12 +31,11 @@ const searchHandler = async (req: NextApiRequest, res: NextApiResponse<Data>) =>
           continue
         }
         const { title, siteName } = parsed;
-        // console.log({ title, siteName });
-        // const metaTags = doc.querySelectorAll('meta') || [];
-        const metaImg = ''; // 'Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
+        const metaTags = doc.querySelectorAll('meta') || [];
+        const metaImg = Array.from(metaTags).find((tag) => tag.getAttribute('property')?.includes('image'))?.content ?? '';
 
-        let domainName = siteName || '';// domainNameFromLink(link.link)
-        
+        const domainName = siteName || domainNameFromLink(link.link);
+
         sources.push({
           title,
           image: metaImg,
